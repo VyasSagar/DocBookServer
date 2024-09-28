@@ -1,18 +1,14 @@
+// models/Appointment.js
 'use strict';
-const {
-  Model
-} = require('sequelize');
+const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class Appointment extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      // define association here
+      Appointment.belongsTo(models.Slot, { foreignKey: 'slotId' });
     }
   }
+
   Appointment.init({
     name: DataTypes.STRING,
     contactNumber: DataTypes.STRING,
@@ -20,10 +16,21 @@ module.exports = (sequelize, DataTypes) => {
     age: DataTypes.INTEGER,
     gender: DataTypes.STRING,
     date: DataTypes.DATE,
-    slot: DataTypes.STRING
+    slotId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'Slots',
+        key: 'id'
+      }
+    },
+    status: {
+      type: DataTypes.STRING,
+      defaultValue: 'scheduled'
+    }
   }, {
     sequelize,
     modelName: 'Appointment',
   });
+
   return Appointment;
 };
