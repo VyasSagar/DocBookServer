@@ -76,4 +76,48 @@ router.get('/slots/:date', async (req, res) => {
   }
 });
 
+// Get all appointments
+router.get('/appointments', async (req, res) => {
+    try {
+      // Fetch all appointments from the database
+      const appointments = await Appointment.findAll({
+        include: [{
+          model: Slot, // Include related slots
+          required: false // Allow appointments without associated slots
+        }]
+      });
+  
+      // Send the appointments data as a JSON response
+      res.json(appointments);
+    } catch (error) {
+      console.error('Error fetching all appointments:', error); // Log error for debugging
+      res.status(500).json({ error: 'Error fetching all appointments' });
+    }
+  });
+
+  router.get('/availableSlots/:date', async (req, res) => {
+    try {
+      const date = req.params.date;
+  
+      // Validate date format
+      if (!isValidDate(date)) {
+        return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD.' });
+      }
+  
+      const slots = await Slot.findAll({
+        where: { date },
+        include: [{
+          model: Appointment,
+          required: false,
+        }],
+      });
+  
+      const availableSlots = slots.filter(slot => slot.Appointments.length === 0);
+      res.json(availableSlots);
+    } catch (error) {
+      console.error('Error fetching available slots:', error); // Log error for debugging
+      res.status(500).json({ error: 'Error fetching available slots' });
+    }
+  });
+
 module.exports = router;

@@ -15,7 +15,10 @@ module.exports = (sequelize, DataTypes) => {
     email: DataTypes.STRING,
     age: DataTypes.INTEGER,
     gender: DataTypes.STRING,
-    date: DataTypes.DATE,
+    date: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+    },
     slotId: {
       type: DataTypes.INTEGER,
       references: {
