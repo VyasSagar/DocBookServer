@@ -29,6 +29,14 @@ module.exports = (sequelize, DataTypes) => {
     status: {
       type: DataTypes.STRING,
       defaultValue: 'scheduled'
+    },
+    token: {
+      type: DataTypes.STRING,
+      allowNull: true, 
+    },
+    natureOfBooking: {
+      type: DataTypes.ENUM('Appointment', 'Spot'),
+      allowNull: false,
     }
   }, {
     sequelize,
