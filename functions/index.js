@@ -7,9 +7,7 @@ const http = require('http'); // Import http for socket.io
 const socketIo = require('socket.io');
 const moment = require('moment');
 const { Op } = require('sequelize');
-const timezone = require('moment-timezone');
 require('dotenv').config();
-
 
 const app = express();
 const server = http.createServer(app);
@@ -41,9 +39,6 @@ const isValidDate = (dateString) => {
 
 io.on('connection', (socket) => {
   console.log('A client connected');
-  console.log('process.env.UI_URL');
-  console.log(process.env.UI_URL);
-  
   const today = new Date().toISOString().split('T')[0];
   const fetchDashboardData = async () => {
     try {
@@ -122,9 +117,8 @@ app.post('/appointments/book', async (req, res) => {
 app.post('/appointments/book-spot', async (req, res) => {
   try {
     const { name, contactNumber, email, age, gender } = req.body;
-
-    const today = timezone().tz('Asia/Kolkata').format('YYYY-MM-DD');
-    const currentTime = timezone().tz('Asia/Kolkata').format('HH:mm');
+    const today = new Date().toISOString().split('T')[0];
+    const currentTime = moment().format('HH:mm');  // Current time in HH:mm format
 
     console.log("Spot booking Date:", today);
     console.log("Spot booking time:", currentTime);
@@ -147,13 +141,11 @@ app.post('/appointments/book-spot', async (req, res) => {
 
     // If no slot is available after the current time, set slotId to 0
     let slotId;
-    let slotTime = null; // default value
     if (!nextAvailableSlot) {
       console.log("No next slots available");
       slotId = 0;
     } else {
       slotId = nextAvailableSlot.id;
-      slotTime = nextAvailableSlot.time;  // Set the slot time
     }
 
     // Create the new spot appointment with the next available slotId
@@ -164,7 +156,7 @@ app.post('/appointments/book-spot', async (req, res) => {
       age,
       gender,
       date: today,
-      slotId: slotId,
+      slotId: slotId,  // Assign the slotId directly
       natureOfBooking: 'Spot',
       status: 'scheduled'
     });
@@ -173,21 +165,8 @@ app.post('/appointments/book-spot', async (req, res) => {
     const allAppointments = await Appointment.findAll({ where: { date: today } });
     await generateToken(appointment, today, allAppointments);
 
-    // Include the slot information (id and time) in the response
-    const response = {
-      message: 'Spot appointment booked successfully',
-      token: appointment.token,
-      appointment: {
-        ...appointment.toJSON(),
-        Slot: {
-          id: slotId,
-          time: slotTime
-        }
-      }
-    };
-
-    // Send the response
-    res.json(response);
+    // Send response with the generated token
+    res.json({ message: 'Spot appointment booked successfully', token: appointment.token, appointment });
     console.log("Spot appointment booked:", appointment);
     io.emit('appointmentBooked', appointment);
   } catch (error) {
@@ -195,7 +174,6 @@ app.post('/appointments/book-spot', async (req, res) => {
     res.status(500).json({ error: 'Error booking spot appointment' });
   }
 });
-
 
 // app.post('/appointments/book-spot', async (req, res) => {
 //   try {
