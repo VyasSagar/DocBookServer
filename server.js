@@ -7,12 +7,16 @@ const http = require('http'); // Import http for socket.io
 const socketIo = require('socket.io');
 const moment = require('moment');
 const { Op } = require('sequelize');
-const timezone = require('moment-timezone');
+const timezone = require('moment-ti mezone');
 require('dotenv').config();
-
 
 const app = express();
 const server = http.createServer(app);
+
+const twilio = require('twilio');
+const client = new twilio(accountSid, authToken);
+
+
 const io = socketIo(server, {
   cors: {
     origin: process.env.UI_URL, // Update this to your frontend URL
@@ -43,7 +47,7 @@ io.on('connection', (socket) => {
   console.log('A client connected');
   console.log('process.env.UI_URL');
   console.log(process.env.UI_URL);
-  
+
   const today = new Date().toISOString().split('T')[0];
   const fetchDashboardData = async () => {
     try {
@@ -92,6 +96,31 @@ io.on('connection', (socket) => {
 // });
 
 
+app.post('/send-whatsapp', (req, res) => {
+  const { contactNumber, message } = req.body;
+
+  // Ensure that the contact number has the correct format (+1234567890)
+  client.messages.create({
+    from: 'whatsapp:+14155238886',  // Twilio WhatsApp sandbox number
+    to: `whatsapp:${contactNumber}`, // Recipient's WhatsApp number
+    body: message
+  })
+    .then((message) => res.status(200).send({ success: true, messageId: message.sid }))
+    .catch((error) => res.status(500).send({ success: false, error: error.message }));
+});
+
+app.post('/send-message', (req, res) => {
+  const { contactNumber, message } = req.body; // type can be 'whatsapp' or 'sms'
+  client.messages.create({
+    from: '+13155656124', // Your Twilio phone number
+    to: contactNumber, // Recipient's phone number
+    body: message
+  })
+    .then((message) => res.status(200).send({ success: true, messageId: message.sid }))
+    .catch((error) => res.status(500).send({ success: false, error: error.message }));
+
+
+});
 app.post('/appointments/book', async (req, res) => {
   try {
     const appointment = await db.Appointment.create(req.body);
@@ -128,7 +157,7 @@ app.post('/appointments/book-spot', async (req, res) => {
 
     console.log("Spot booking Date:", today);
     console.log("Spot booking time:", currentTime);
-    
+
     // Fetch all slots for today
     const allSlots = await Slot.findAll();
 
